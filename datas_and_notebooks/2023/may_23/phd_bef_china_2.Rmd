@@ -1,0 +1,403 @@
+---
+title: An R Markdown document converted from "/Users/godbergodbersen/Desktop/phd_bef_china/may_23/may_23.ipynb"
+output: html_document
+---
+
+# Data cleaning and creation of new datasets for May 2023
+
+```{r}
+library(janitor)
+library(tidyverse)
+library(readxl)
+veg_survey <- read_excel("/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/may_23/Sapling Survey May 2023.xlsx") |>
+  mutate(across(where(is.character), ~str_trim(.) |> tolower())) |>
+  clean_names()
+
+sapling_survey <- read_excel("/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/may_23/Sapling Survey May 2023.xlsx") |>
+  mutate(across(where(is.character), ~str_trim(.) |> tolower())) |>
+  clean_names()
+
+str(veg_survey)
+str(sapling_survey)
+```
+
+```{r}
+sapling_survey <- sapling_survey |>
+  rename("notes" = x21) |>
+  mutate(across(where(is.character), ~na_if(., "na")))
+sapling_survey
+```
+
+## reading in final dataset from september for joining
+
+```{r}
+final_data_september <- read.csv("/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/september_23/final_data_september.csv", stringsAsFactors = FALSE)
+str(final_data_september)
+```
+
+## Identify missing or ungiven species names and correct spelling mistakes
+
+```{r}
+sapling_survey <- sapling_survey |> 
+  mutate(
+    species = case_when(
+      id == "737x" ~ "fern",
+      id == "963" ~ "trema cannabina",
+      id == "392" ~ "distylium buxifolium",
+      species == "444" ~ "clerodendrum cyrtophyllum",
+      species == "clerodendrum cyrtophyllum (444)" ~ "clerodendrum cyrtophyllum",
+      species == "1171" ~ "lindera reflexa",
+      species == "307" ~ "ilex suaveolens",
+      species == "1294" ~ "eurya muricata", 
+      id == "1294" ~ "eurya muricata", 
+      id == "1242" ~ "pterostyrax corymbosus",
+      id == "1021" ~ "premna microphylla",
+      id == "1217" ~ "camellia fraterna",
+      id == "1390" ~ "buddleja lindleyana", 
+      species == "?" ~ "unknown sp.", 
+      TRUE ~ species
+    ),
+    species = str_remove_all(species, "\\[|\\]")
+  ) |>
+  mutate(across(everything(), ~str_replace_all(., "/", ""))) |>
+  filter(!is.na(species))
+
+sapling_survey
+```
+
+```{r}
+sapling_survey <- sapling_survey |>
+  mutate(
+    # First, set growth_form to "herb" if species is "herb"
+    growth_form = case_when(
+      str_to_lower(species) == "herb" ~ "herb",
+      str_to_lower(species) == "unknown sp." & !is.na(notes) & str_to_lower(notes) == "woody recruit" ~ "shrub/tree",
+      TRUE ~ NA_character_
+    ),
+    # Then, set species to "unknown sp." if it was "herb"
+    species = case_when(
+      str_to_lower(species) == "herb" ~ "unknown sp.",
+      TRUE ~ species
+    ),
+    # Then, set type for quercus seedling and seedling
+    type = case_when(
+      str_to_lower(species) == "quercus seedling" ~ "seedling",
+      str_to_lower(species) == "seedling" ~ "seedling",
+      TRUE ~ NA_character_
+    )
+  ) |> 
+  # Standardize species names
+  mutate(
+    species = case_when(
+      str_to_lower(species) == "alniphylum fortunei" ~ "alniphyllum fortunei",
+      str_to_lower(species) == "calicarpa dischotoma" ~ "calicarpa dichotoma",
+      str_to_lower(species) == "camellia janopica" ~ "camellia japonica",
+      str_to_lower(species) == "clerodendrum cyrtophullym" ~ "clerodendrum cyrtophyllum",
+      str_to_lower(species) == "itea" ~ "itea sp.",
+      str_to_lower(species) == "lindera erythocarpa" ~ "lindera erythrocarpa",
+      str_to_lower(species) == "lindera refelxa" ~ "lindera reflexa",
+      str_to_lower(species) == "liquidamabar formosana" ~ "liquidambar formosana",
+      str_to_lower(species) == "ltea omeiensis" ~ "itea omeiensis",
+      str_to_lower(species) == "mussaendra esquirolii" ~ "mussaenda esquirolii",
+      str_to_lower(species) == "musseandra esquirolii" ~ "mussaenda esquirolii",
+		  str_to_lower(species) == "musseanda esquirolii" ~ "mussaenda esquirolii",
+      str_to_lower(species) == "musseandra equifolia" ~ "mussaenda equifolia",
+      str_to_lower(species) == "pterostryax corymbusus" ~ "pterostyrax corymbosus",
+		  str_to_lower(species) == "phyllanthus glauca" ~ "phyllostachys glauca",
+		  str_to_lower(species) == "camellia chinensis" ~ "camellia sinensis",
+      str_to_lower(species) == "quercues serrata" ~ "quercus serrata",
+      str_to_lower(species) == "rhapiolepis indica" ~ "rhaphiolepis indica",
+      str_to_lower(species) == "rhaphioides indica" ~ "rhaphiolepis indica",
+      str_to_lower(species) == "rhalpioides indica" ~ "rhaphiolepis indica",
+		  str_to_lower(species) == "rhaipoides indica" ~ "rhaphiolepis indica",
+      str_to_lower(species) == "rhododenron simsii" ~ "rhododendron simsii",
+      str_to_lower(species) == "rosa" ~ "rosa sp.",
+      str_to_lower(species) == "schoepfja jasminodora" ~ "schoepfia jasminodora",
+      str_to_lower(species) == "sp 37*" ~ "alniphyllum fortunei",
+      str_to_lower(species) == "styrax odoratismus" ~ "styrax odoratissimus",
+      str_to_lower(species) == "cfr. styrax odoratissimus" ~ "styrax odoratissimus", 
+      str_to_lower(species) == "vaccinium bracetatum" ~ "vaccinium bracteatum",
+      str_to_lower(species) == "viburnum sempiverens" ~ "viburnum sempervirens",
+      str_to_lower(species) == "araisia crenata" ~ "ardisia crenata",
+      str_to_lower(species) == "calicarpa sp" ~ "calicarpa sp.",
+      str_to_lower(species) == "calicarpa sp," ~ "calicarpa sp.",
+      str_to_lower(species) == "quercus seedling" ~ "quercus sp.",
+      str_to_lower(species) == "seedling" ~ "unknown sp.",
+      str_to_lower(species) == "woody recruit" ~ "unknown sp.",
+		  str_to_lower(species) == "machilus grijsi" ~ "machilus grijesi",
+		  str_to_lower(species) == "pterostyrax corymbusus" ~ "pterostyrax corymbosus",
+      TRUE ~ species
+    )
+  )
+```
+
+```{r}
+sapling_survey <- sapling_survey |>
+  mutate(genus = word(species, 1)) |> 
+  left_join(final_data_september |> select(genus, family, growth_form) |> distinct(), by = "genus") |> 
+  distinct() |>
+  mutate(
+    growth_form = ifelse(is.na(growth_form.x) | growth_form.x == "", growth_form.y, growth_form.x)
+  ) |>
+  select(-growth_form.x, -growth_form.y)
+
+sapling_survey
+```
+
+## Bring columns into same format as september data and join with september values
+
+```{r}
+# Rename columns in sapling_survey to match the format and names of final_data_september
+sapling_survey <- sapling_survey |>
+  rename(
+    number_leaves = leaves,
+    number_herb_damaged = herb_dam,
+    percent_hmin = hmin,
+    percent_hmax = hmax,
+    number_fungal_damaged = fpdam,
+    percent_fmin = fmin,
+    percent_fmax = fmax,
+    number_necrotic_damaged = nec_dam,
+    percent_nmin = nmin,
+    percent_nmax = nmax
+  )
+
+# Convert columns to appropriate types
+sapling_survey <- sapling_survey |>
+  mutate(
+    date = as.Date(date),
+	month = lubridate::month(date),
+    height = as.numeric(height),
+    number_leaves = as.numeric(number_leaves),
+    number_herb_damaged = as.numeric(number_herb_damaged),
+    hprop = as.numeric(hprop),
+    percent_hmin = as.numeric(percent_hmin),
+    percent_hmax = as.numeric(percent_hmax),
+    number_fungal_damaged = as.numeric(number_fungal_damaged),
+    fprop = as.numeric(fprop),
+    percent_fmin = as.numeric(percent_fmin),
+    percent_fmax = as.numeric(percent_fmax),
+    number_necrotic_damaged = as.numeric(number_necrotic_damaged),
+    nprop = as.numeric(nprop),
+    percent_nmin = as.numeric(percent_nmin),
+    percent_nmax = as.numeric(percent_nmax)
+  )
+
+# Reorder columns to match final_data_september and remove hprop, fprop, nprop
+sapling_survey <- sapling_survey  |> 
+ left_join(final_data_september |> select(plot, subplot, site, diversity)|> distinct()) |> 
+select(
+    date, month, plot, subplot, site, diversity, id, species, genus, family, growth_form, survival, height,
+    number_leaves, number_herb_damaged, percent_hmin, percent_hmax,
+    number_fungal_damaged, percent_fmin, percent_fmax,
+    number_necrotic_damaged, percent_nmin, percent_nmax, notes, type
+  )
+```
+
+```{r}
+str(sapling_survey)
+str(final_data_september)
+```
+
+```{r}
+# Get unique species from both dataframes
+species_sapling <- sapling_survey |> distinct(species) |> mutate(source = "sapling_survey")
+species_final <- final_data_september |> distinct(species) |> mutate(source = "final_data_september")
+
+# Combine into one dataset
+species_combined <- bind_rows(species_sapling, species_final)
+
+# Create a summary table showing presence in each dataset
+species_wide <- species_combined |>
+  mutate(present = TRUE) |>
+  tidyr::pivot_wider(
+    names_from = source,
+    values_from = present,
+    values_fill = FALSE
+  )
+
+species_wide 
+```
+
+```{r}
+sapling_survey
+```
+
+```{r}
+# Load the required package for fill()
+surveys <- final_data_september |> 
+  mutate(
+    species = case_when(
+      str_to_lower(species) == "musseanda esquirolii" ~ "mussaenda esquirolii",
+      TRUE ~ species
+    ),
+    date = as.Date(date),
+    month = month(date), 
+	  year = year(date)
+  ) |> 
+  select(-X) |> 
+  distinct() |> 
+  full_join(sapling_survey) |> 
+  group_by(plot) |> 
+  fill(site, diversity, .direction = "down") |> 
+  ungroup()
+```
+
+```{r}
+surveys <- surveys |>
+  mutate(
+    subplot = if_else(subplot == "aw14" & id == "1726", "aw14-i", subplot),
+    percent_herb = number_herb_damaged / number_leaves,
+    percent_necrose = number_necrotic_damaged / number_leaves,
+    percent_fungal = number_fungal_damaged / number_leaves
+  ) |>
+  relocate(notes, .after = last_col())
+write.csv(surveys, file = "/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/final_datas/final_surveys.csv") 
+surveys
+```
+
+# Vegetation survey
+
+```{r}
+veg_2023 <- read_excel("/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/may_23/Vegetation survey 2023.xlsx") |> 
+  clean_names() |> 
+  mutate(across(where(is.character), ~ str_trim(str_to_lower(.))))
+
+str(veg_2023)
+veg_2023
+```
+
+```{r}
+veg_2024 <- read_excel("/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2024/Vegetation survey spring 2024 (1 subplot missing).xlsx") |> 
+  clean_names() |> 
+  mutate(
+    across(
+      everything(),
+      ~ {
+        x_chr <- as.character(.)
+        x_chr <- str_replace_all(x_chr, fixed("80 (w)"), "80")
+        x_chr <- str_replace_all(x_chr, fixed("0.55000000000000004"), "0.55")
+        x_chr <- str_replace_all(x_chr, fixed("7.0000000000000007e-2"), "0.07")
+        x_chr <- str_replace_all(x_chr, fixed("0.56999999999999995"), "0.5699")
+        x_chr <- str_replace_all(x_chr, fixed(","), ".")
+        if (is.character(.)) {
+          x_chr <- str_trim(str_to_lower(x_chr))
+          x_chr[grepl("^na$", x_chr)] <- NA_character_
+        }
+        suppressWarnings(type.convert(x_chr, as.is = TRUE))
+      }
+    )
+  )
+
+veg_2024 <- veg_2024 |> 
+  select(-c(16, 17), -c(19:ncol(veg_2024))) |> 
+  mutate(
+    max_herb_layer_height = as.numeric(if_else(
+      max_herb_layer_height == "80 (w)", 
+      "80", 
+      max_herb_layer_height
+    ))
+  )
+
+veg_2024_num <- veg_2024 |>
+  mutate(across(
+    .cols = setdiff(seq_along(veg_2024), c(1:3, 16)),
+    .fns = as.numeric
+  ))
+
+# Rename columns to match veg_2023
+veg_2024_num <- veg_2024_num |>
+  rename(
+    herb_max = max_herb_layer_height,
+    herbaceous = herb,
+    woody = woody_plants,
+    open = open_ground,
+    leaflitter = leaf_litter,
+    leaflitter_depth = leaf_litter_dept,
+    deadwood = deadwppd
+  )
+
+# Add missing columns (saplings, seedlings) as NA if not present
+if (!"saplings" %in% names(veg_2024_num)) {
+  veg_2024_num$saplings <- NA_real_
+}
+if (!"seedlings" %in% names(veg_2024_num)) {
+  veg_2024_num$seedlings <- NA_real_
+}
+
+# Reorder columns to match veg_2023
+veg_2024_num <- veg_2024_num |>
+  select(
+    date,  plot, subplot, tot_veg, herb_max, grass, fern, herbaceous, woody, 
+    rock, deadwood, leaflitter, moss, notes
+  )
+
+# Convert date to POSIXct to match veg_2023
+veg_2024_num <- veg_2024_num |>
+  mutate(date = as.POSIXct(date))
+
+str(veg_2024_num)
+veg_2024_num
+```
+
+```{r}
+lapply(veg_2024, unique)
+```
+
+```{r}
+(veg_surveys <- veg_2023 |> 
+  full_join(
+    veg_2024_num |> 
+      mutate(
+        date = str_replace_all(date, "2023", "2024"),
+        date = as.Date(date)
+      )
+  ) |>  
+   distinct() |> 
+  filter(
+    !(subplot == "ao22-iii" & grass == 0.001),
+    !(subplot == "aq21-iii" & grass == 0.01),
+    !(subplot == "aq9-i" & tot_veg == 0.4)
+  ) |> 
+mutate(year = year(date)) |> 
+ distinct())
+
+write.csv(veg_surveys, "/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/final_datas/final_veg_surveys.csv")
+```
+
+```{r}
+veg_surveys |>
+  group_by(date, plot, subplot) |>
+  summarise(n = n(), .groups = "drop") |>
+  filter(n > 1)
+```
+
+# Final Join with may/sept surveys
+
+```{r}
+(final_joined <- surveys |> 
+  mutate(
+    year = year(date), 
+    subplot = ifelse(plot == "bq27" & subplot == "bo27-iv", "bq27-iv", subplot),
+    subplot = ifelse(plot == "aj21" & subplot == "ai21-ii", "aj21-ii", subplot),
+    subplot = str_replace_all(subplot, " ", "")
+  ) |> 
+  filter(!(subplot == "bt19-iiiv" & id == "1282")) |>
+  left_join(
+    veg_surveys |> 
+      mutate(year = year(date)) |> 
+      select(-c(date, notes)) |> 
+      distinct()
+  )
+)
+write.csv(final_joined, file = "/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/final_datas/final_joined.csv")
+```
+
+ao22-ii missing
+aq21-ii missing
+aq9-ii missing
+aq9-i.o. missing
+bx21-i missing
+
+
+

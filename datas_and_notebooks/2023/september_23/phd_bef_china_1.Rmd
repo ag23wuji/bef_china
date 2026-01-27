@@ -1,0 +1,619 @@
+---
+title: An R Markdown document converted from "/Users/godbergodbersen/Desktop/phd_bef_china/notebook.ipynb"
+output: html_document
+---
+
+# Install and load packages 
+
+```{r message=FALSE, warning=FALSE, include=TRUE, paged.print=TRUE}
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+
+if (!requireNamespace("corrplot", quietly = TRUE)) {
+  install.packages("corrplot")
+}
+
+if (!requireNamespace("broom.mixed", quietly = TRUE)) {
+  install.packages("broom.mixed")
+}
+
+if (!requireNamespace("psych", quietly = TRUE)) {
+  install.packages("psych")
+}
+
+if (!requireNamespace("factoextra", quietly = TRUE)) {
+  install.packages("factoextra")
+}
+
+if (!requireNamespace("ggExtra", quietly = TRUE)) {
+  install.packages("ggExtra")
+}
+
+if (!requireNamespace("janitor", quietly = TRUE)) {
+  install.packages("janitor")
+}
+
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate")
+}
+
+if (!requireNamespace("readr", quietly = TRUE)) {
+  install.packages("readr")
+}
+
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+}
+
+if (!requireNamespace("viridis", quietly = TRUE)) {
+  install.packages("viridis")
+}
+
+if (!requireNamespace("ggridges", quietly = TRUE)) {
+  install.packages("ggridges")
+}
+
+if (!requireNamespace("sjPlot", quietly = TRUE)) {
+  install.packages("sjPlot")
+}
+
+if (!requireNamespace("see", quietly = TRUE)) {
+  install.packages("see")
+}
+
+if (!requireNamespace("gtsummary", quietly = TRUE)) {
+  install.packages("gtsummary")
+}
+
+if (!requireNamespace("lme4", quietly = TRUE)) {
+  install.packages("lme4")
+}
+
+if (!requireNamespace("performance", quietly = TRUE)) {
+  install.packages("performance")
+}
+
+if (!requireNamespace("broom", quietly = TRUE)) {
+  install.packages("broom")
+}
+
+if (!requireNamespace("naniar", quietly = TRUE)) {
+  install.packages("naniar")
+}
+
+if (!requireNamespace("cluster", quietly = TRUE)) {
+  install.packages("cluster")
+}
+
+if (!requireNamespace("fastDummies", quietly = TRUE)) {
+  install.packages("fastDummies")
+}
+
+if (!requireNamespace("clValid", quietly = TRUE)) {
+  install.packages("clValid") 
+}
+
+if (!requireNamespace("ggbiplot", quietly = TRUE)) {
+  install.packages("ggbiplot") 
+}
+
+if (!requireNamespace("reshape2", quietly = TRUE)) {
+  install.packages("reshape2") 
+}
+
+if (!requireNamespace("ggcorrplot", quietly = TRUE)) {
+  install.packages("ggcorrplot") 
+}
+
+if (!requireNamespace("glmmTMB", quietly = TRUE)) {
+  install.packages("glmmTMB") 
+}
+
+if (!requireNamespace("ggstatsplot", quietly = TRUE)) {
+  install.packages("ggstatsplot") 
+}
+
+if (!requireNamespace("mice", quietly = TRUE)) {
+  install.packages("mice") 
+}
+
+if (!requireNamespace("effects", quietly = TRUE)) {
+  install.packages("effects") 
+}
+
+if (!requireNamespace("patchwork", quietly = TRUE)) {
+  install.packages("patchwork") 
+}
+
+if (!requireNamespace("pheatmap", quietly = TRUE)) {
+  install.packages("pheatmap") 
+}
+
+if (!requireNamespace("plotly", quietly = TRUE)) {
+  install.packages("plotly") 
+}
+
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse") 
+}
+
+if (!requireNamespace("readxl", quietly = TRUE)) {
+  install.packages("readxl") 
+}
+
+
+library(tidyverse)
+library(readxl)
+library(janitor)
+```
+
+# Data cleaning and creation of new datasets for September 2023
+
+```{r, results="hide"}
+
+# List all .xlsx files in the current working directory
+xlsx_files <- list.files(
+  path = "/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/september_23", 
+  pattern = "\\.xlsx$", 
+  full.names = TRUE
+)
+
+# Read all .xlsx files into a named list of data frames
+xlsx_data <- lapply(xlsx_files, readxl::read_excel)
+names(xlsx_data) <- basename(xlsx_files)
+
+xlsx_data
+```
+## Create a new dataset containing information about growth form and family of the species
+
+```{r}
+genus <- c('quercus','dalbergia','rhododendron','ilex','loropetalum','camellia','nyssa','eurya','symplocos','ardisia','buddleja','styrax',NA,'trema','musseanda','lindera','syzygium','adinandra','smilax','lithocarpus','clerodendrum','calicarpa','cinnamomum','castanea','itea','manglietia','actinidia','premna','osmanthus','alniphyllum','crataegus','schoepfia','rhaphiolepis','betula','machilus','castanopsis','photinia','litsea','distylium','euonymus','rosa','vaccinium','fraxinus','liquidambar','unknown','centaurea','pterostyrax','euscaphis','melia','rhus','not-liquidambar','viburnum','fern','albizia','rubus','phyllostachys','broussonetia','aralia','toxicodendron','ailanthus')
+
+family <- c('Fagaceae','Fabaceae','Ericaceae','Aquifoliaceae','Hamamelidaceae','Theaceae','Nyssaceae','Pentaphylacaceae','Symplocaceae','Primulaceae','Scrophulariaceae','Styracaceae',NA,'Cannabaceae','Rubiaceae','Lauraceae','Myrtaceae','Pentaphylacaceae','Smilacaceae','Fagaceae','Lamiaceae','Lamiaceae','Lauraceae','Fagaceae','Iteaceae','Magnoliaceae','Actinidiaceae','Lamiaceae','Oleaceae','Styracaceae','Rosaceae','Schoepfiaceae','Rosaceae','Betulaceae','Lauraceae','Fagaceae','Rosaceae','Lauraceae','Hamamelidaceae','Celastraceae','Rosaceae','Ericaceae','Oleaceae','Altingiaceae',NA,'Asteraceae','Styracaceae','Staphyleaceae','Meliaceae','Anacardiaceae',NA,'Adoxaceae','Polypodiopsida','Fabaceae','Rosaceae','Poaceae','Moraceae','Araliaceae','Anacardiaceae','Simaroubaceae')
+
+growth_form <- c('tree', 'tree', 'shrub/tree', 'shrub/tree', 'shrub', 
+                 'shrub/tree', 'tree', 'shrub/tree', 'shrub/tree', 'shrub', 'shrub', 
+                 'shrub/tree', 'unknown', 'tree', 'shrub/tree', 'shrub/tree', 
+                 'shrub/tree', 'shrub/tree', 'liana/shrub', 'tree', 
+                 'shrub/tree/vine', 'shrub/tree', 'tree', 'tree', 'shrub', 'tree', 
+                 'liana', 'tree/shrub', 'shrub/tree', 'tree', 'shrub/tree', 
+                 'shrub/tree', 'shrub/tree', 'tree/shrub', 'tree/shrub', 'tree', 
+                 'shrub/tree', 'tree/shrub', 'shrub/tree', 'shrub/tree/liana', 
+                 'shrub/liana', 'shrub/herb', 'tree', 'tree', 'unknown', 'herb', 
+                 'tree/shrub', 'tree/shrub', 'tree', 'shrub/tree', 'unknown', 
+                 'shrub/tree', 'herb/tree', 'tree/shrub', 'shrub/liana/herb', 
+                 'shrub/tree', 'tree', 'herb/shrub/tree', 'shrub/tree/liana', 'tree')
+
+# Erstellen des Data Frames
+
+genus_family_df <- data.frame(genus, family, growth_form, stringsAsFactors = FALSE) |> 
+  janitor::clean_names() |> 
+  dplyr::mutate(family = tolower(family), growth_form = case_when(genus == "aralia" ~ "tree", genus == "clerodendrum" ~ "shrub/tree", genus == "rubus" ~ "shrub", genus == "vaccinium" ~ "shrub/tree", genus == "euonymus" ~ "shrub/tree", genus == "toxidodendron" ~ "shrub/tree",  TRUE ~ growth_form)) |> 
+ mutate(growth_form = str_replace_all(growth_form, "tree/shrub", "shrub/tree"), growth_form = str_replace_all(growth_form, "liana/shrub", "shrub/liana"))
+genus_family_df
+```
+
+## Cleaning process of the datasets
+
+```{r}
+# Clean column names, trim/tolower all character columns, and convert "na" strings to NA
+xlsx_data <- lapply(
+  xlsx_data,
+  function(df) {
+    df <- clean_names(df)
+    df <- df %>%
+      mutate(across(
+        where(is.character),
+        ~ {
+          x <- str_trim(tolower(.))
+          x[x == "na"] <- NA_character_
+          x
+        }
+      ))
+    df
+  }
+)
+```
+
+```{r}
+# Print column names of each dataset in xlsx_data
+for (name in names(xlsx_data)) {
+  cat("Columns in", name, ":\n")
+  print(str(xlsx_data[[name]]))
+  cat("\n")
+}
+```
+
+```{r}
+# Find common column names across all data frames in xlsx_data
+common_colnames <- Reduce(intersect, lapply(xlsx_data, colnames))
+common_colnames
+```
+
+```{r}
+# List all .xlsx files in the current working directory
+xlsx_files <- list.files(pattern = "\\.xlsx$", full.names = TRUE)
+
+# Read all .xlsx files into a named list of data frames
+xlsx_data <- lapply(xlsx_files, read_excel)
+names(xlsx_data) <- basename(xlsx_files)
+
+# Clean column names, trim/tolower all character columns, convert "na" strings to NA,
+# and replace "," between two digits with "."
+xlsx_data <- lapply(
+  xlsx_data,
+  function(df) {
+    df <- clean_names(df)
+    df <- df %>%
+      mutate(across(
+        where(is.character),
+        ~ {
+          x <- str_trim(tolower(.))
+          x[x == "na"] <- NA_character_
+          # Replace "," between two digits with "."
+          x <- str_replace_all(x, "(?<=\\d),(?=\\d)", ".")
+          x
+        }
+      ))
+    df
+  }
+)
+```
+
+```{r}
+# Display each dataset in xlsx_data (show in notebook, not print)
+xlsx_data$sapling_survey_september_2023_2.xlsx
+xlsx_data$sapling_survey_september_2023_3.xlsx
+xlsx_data$sapling_survey_september_2023_4.xlsx
+xlsx_data$sapling_survey_september_2023_5.xlsx
+#xlsx_data$sapling_survey_september_2023_2.xlsx
+```
+
+```{r}
+str(xlsx_data)
+```
+
+```{r}
+# Custom cleaning function for all data frames
+xlsx_data <- lapply(
+  xlsx_data,
+  function(df) {
+    df <- df %>%
+      mutate(across(
+        where(is.character),
+        ~ {
+          x <- .
+          # Remove all "/"
+          x <- str_replace_all(x, "/", "")
+          # Replace "absent" (case-insensitive) with NA
+          x[tolower(x) == "absent"] <- NA_character_
+          # Replace digit followed by "b" (e.g., 0.3b) with just the digit part
+          x <- str_replace_all(x, "(\\d+(?:\\.\\d+)?)b", "\\1")
+          # Replace "à?à\\" with "0.01"
+          x <- str_replace_all(x, "à\\?à\\\\", "0.01")
+		  x <- str_replace_all(x, "à", NA_character_)
+          # Replace "?" with "."
+          x <- str_replace_all(x, "\\?", ".")
+          # Replace " - " (space-dash-space) with "-"
+          x <- str_replace_all(x, " - ", "-")
+          x
+        }
+      ))
+    df
+  }
+)
+
+# Special cleaning for percent_damage_fp in sapling_survey_september_2023_5.xlsx
+if ("sapling_survey_september_2023_5.xlsx" %in% names(xlsx_data)) {
+  df5 <- xlsx_data[["sapling_survey_september_2023_5.xlsx"]]
+  if ("percent_damage_fp" %in% names(df5)) {
+    # Replace all "," with "0." in percent_damage_fp
+    df5$percent_damage_fp <- str_replace_all(df5$percent_damage_fp, ",", "0.")
+    xlsx_data[["sapling_survey_september_2023_5.xlsx"]] <- df5
+  }
+}
+
+# Remove columns x11, x14, x17 from sapling_survey_september_2023_5.xlsx
+if ("sapling_survey_september_2023_5.xlsx" %in% names(xlsx_data)) {
+  df5 <- xlsx_data[["sapling_survey_september_2023_5.xlsx"]]
+  cols_to_remove <- c("x11", "x14", "x17")
+  df5 <- df5[, !(names(df5) %in% cols_to_remove), drop = FALSE]
+  xlsx_data[["sapling_survey_september_2023_5.xlsx"]] <- df5
+}
+
+if ("sapling_survey_september_2023_4.xlsx" %in% names(xlsx_data)) {
+  df4 <- xlsx_data[["sapling_survey_september_2023_4.xlsx"]]
+  cols_to_remove <- c("x260")
+  df4 <- df4[, !(names(df4) %in% cols_to_remove), drop = FALSE]
+  xlsx_data[["sapling_survey_september_2023_4.xlsx"]] <- df5
+}
+```
+
+## Joining the clean datasets into one 
+
+```{r}
+# Assuming xlsx_data is a list of dataframes
+# Perform a full join of all dataframes in xlsx_data
+df_full_joined <- reduce(xlsx_data, full_join)
+
+str(df_full_joined)
+```
+
+## Fix spelling mistakes and add missing species names
+
+```{r}
+(df_full_joined_2 <- df_full_joined %>%
+  mutate(
+    growth_form = case_when(
+      species == "fern" ~ "fern",
+      species == "herb" ~ "herb",
+	  species == "woody recruit" ~ "tree/shrub",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  mutate(across(where(is.character), str_trim)) %>%
+  mutate(
+    site = ifelse(startsWith(plot, "b"), "b", site),
+    number_leaves = ifelse(
+      (is.na(number_leaves) | number_leaves == "" | number_leaves == "NA") & 
+      !(is.na(leaves) | leaves == "" | leaves == "NA"),
+      leaves,
+      number_leaves
+    ),
+    notes = ifelse((species == "look at photo"), "look at photo (3)", notes), 
+      species = case_when(
+      id == "737x" ~ "fern",
+      id == "963" ~ "trema cannabina",
+      id == "392" ~ "distylium buxifolium",
+      species == "444" ~ "clerodendrum cyrtophyllum",
+      species == "clerodendrum cyrtophyllum (444)" ~ "clerodendrum cyrtophyllum",
+      species == "1171" ~ "lindera reflexa",
+      species == "307" ~ "ilex suaveolens",
+      id == "1294" ~ "eurya muricata", 
+		  id == "1294" ~ "eurya muricata", 
+		  id == "1242" ~ "pterostyrax corymbosus",
+		  id == "1021" ~ "premna microphylla",
+		  id == "1217" ~ "camellia fraterna",
+		  id == "1390" ~ "buddleja lindleyana",
+      species == "si" ~ "ilex ficoidea",
+      species == "calicarpa sp" ~ "calicarpa sp.",
+      species == "camellis sinensis" ~ "camellia sinensis",
+      species == "camerllia sinensis" ~ "camellia sinensis", 
+      species == "adinandra milletti" ~ "adinandra millettii", 
+      species == "castanopsis fargesi" ~ "castanopsis fargesii", 
+      species == "cinammomum camphora" ~ "cinnamomum camphora",
+      species == "knoopkruid" ~ "centaurea jacea",  
+      species == "lithicarpus glaber" ~ "lithocarpus glaber",  
+      species == "pterostryax corymbosus" ~ "pterostyrax corymbosus",
+      species == "rosa" ~ "rosa sp.",
+      species == "rubus cotchotifolius" ~ "rubus corchorifolius",
+      species == "schoepia jasminodora" ~ "schoepfia jasminodora",
+      species == "smlax china" ~ "smilax china",
+      species == "seedling (cfr. litea)" ~ "litea sp.",
+      species == "xxx" ~ "unknown sp.",
+      species == "fern" ~ "unknown sp.",
+		  species == "herb" ~ "unknown sp.",
+		  species == "tremna cannabina" ~ "trema cannabina", 
+		  species == "tremna cnnabina" ~ "trema cannabina", 
+		  species == "vaccinium bracetatum" ~ "vaccinium bracteatum", 
+	    species == "woody recruit" ~ "unknown sp.", 
+		  species ==  "styrax odoratismus" ~ "styrax odoratissimus", 
+		  species ==  "styrax odoratissmus" ~ "styrax odoratissimus",
+      is.na(species) ~ "unknown sp.",
+      str_detect(str_to_lower(species), "buddleja") ~ "buddleja lindleyana",
+      str_detect(str_to_lower(species), "rhap") ~ "rhaphiolepis indica",
+      str_detect(str_to_lower(species), "rhod") ~ "rhododendron simsii",
+      str_detect(str_to_lower(species), "lindera ery") ~ "lindera erythrocarpa", 
+      TRUE ~ species
+    ),
+    # Replace only the word "seedling" (case-insensitive) with "sp." in species, not the whole cell
+    species = str_replace_all(species, regex("\\bseedling\\b", ignore_case = TRUE), "sp."),
+    species = str_replace_all(species, regex("\\bseediing\\b", ignore_case = TRUE), "sp."),
+    species = str_replace_all(species, regex("\\bseedliing\\b", ignore_case = TRUE), "sp."),
+    species = str_replace_all(species, regex("\\bseedlind\\b", ignore_case = TRUE), "sp."),
+    # Fix: Use if_else to replace "sp." with NA_character_
+    species = if_else(species == "sp.", NA_character_, species),
+    species = if_else(species == "look at photo", NA_character_, species),
+    species = str_replace_all(species, regex("fraxnus", ignore_case = TRUE), "fraxinus"),
+    # Replace [euonymus maxiflorus] with "euonymus maxiflorus"
+    species = str_replace_all(species, fixed("[euonymus maxiflorus]"), "euonymus maxiflorus")
+  ) %>%
+  mutate(
+    id = case_when(
+      str_to_lower(species) == "loropetalum chinense" & id == "1294" ~ "1294a",
+      id == "0.14299999999999999" ~ "143",
+      TRUE ~ id
+    )
+  ) %>%
+  select(-leaves) |> 
+  filter(!is.na(id)) |> 
+  mutate(
+    subplot = if_else(is.na(subplot) | subplot == "" | subplot == "NA", individual_id, subplot), 
+    notes = if_else(is.na(notes) | notes == "" | notes == "NA", x18, notes)
+  ) |> 
+  select(-individual_id, -x18) |>
+  group_by(plot) |>
+  mutate(
+    diversity = if (all(is.na(diversity))) NA_real_ else first(na.omit(diversity))
+  ) |>
+  ungroup())
+```
+
+```{r}
+df_full_joined_2 <- df_full_joined_2 |>
+  mutate(
+    type = if_else(is.na(type) & notes == "seedling", notes, type), 
+    species = if_else(species == "sp. (cfr. litsea)", "litsea sp.", species)
+  ) |>
+  filter(!(species == "ilex suaveolens" & id == "101"), !(id == "105" & number_leaves == ">75"), !(id == "1056" & number_leaves == ">75 (3)"), !(id == "1063" & number_leaves == ">75 (3)"), !(id == "1059" & number_leaves == ">75 (3)"), !(id == "107" & number_leaves == ">75 (5)")) 
+df_full_joined_2
+```
+
+```{r}
+# Identify columns to fill (excluding grouping columns)
+group_cols <- c("species", "id", "date", "site", "plot", "subplot")
+fill_cols <- setdiff(names(df_full_joined_2), group_cols)
+
+# For each group, check if all non-NA values in each column are identical
+df_full_joined_2 <- df_full_joined_2 |>
+   mutate(number_leaves = str_replace_all(number_leaves, fixed(">"), NA), number_leaves = str_replace_all(number_leaves, fixed("p"), NA), number_leaves = str_replace_all(number_leaves, fixed("."), NA), notes = str_replace_all(notes, fixed("miswritten as 431 in prev census; 5"), NA), height = str_replace_all(height, fixed("dead"), NA), notes = str_replace_all(notes, fixed("previously assigned to iv by accident. 4"), NA)) |> 
+  #filter(!notes == "miswritten as 431 in prev census; 5") |> 
+  group_by(across(all_of(group_cols))) |>
+  mutate(
+    across(
+      all_of(fill_cols),
+      ~ {
+        # Remove NAs and get unique values
+        uniq_vals <- unique(na.omit(.x))
+        # If only one unique non-NA value, fill NAs with it
+        if (length(uniq_vals) == 1) {
+          replace(.x, is.na(.x), uniq_vals)
+        } else {
+          .x
+        }
+      }
+    )
+  ) |>
+  ungroup() |>
+  distinct() 
+
+df_full_joined_2
+```
+
+## summarise by groups and identify potential duplicates 
+
+```{r}
+# Remove specified columns
+df_full_joined_2 <- df_full_joined_2 |>
+  select(-c(
+    number_herbivory_damaged, herb_dam_27, hprop,
+    number_fungal_pathogen_damaged, fprop, number_necrosis, percent_damage_fp, number_necrose_damage, percent_damage_necrose, percent_damage_herbivory
+  ))
+
+# Define grouping columns
+group_cols <- c("date", "plot", "subplot", "id", "species")
+
+# Columns to check for similarity (excluding survival and group columns)
+check_cols <- setdiff(names(df_full_joined_2), c(group_cols, "survival"))
+
+# For each group, if all columns except survival are identical, unite survival with ";"
+df_full_joined_2 <- df_full_joined_2 |>
+  group_by(across(all_of(group_cols))) |>
+  mutate(
+    n_rows = n()
+  ) |>
+  mutate(
+    all_equal = all(across(all_of(check_cols), ~ n_distinct(.x) == 1))
+  ) |>
+  mutate(
+    survival = ifelse(
+      all_equal,
+      paste(sort(unique(survival)), collapse = ";"),
+      survival
+    )
+  ) |>
+  filter(if (first(all_equal)) row_number() == 1 else TRUE) |>
+  ungroup() |>
+  select(-n_rows, -all_equal) |> 
+  distinct()
+
+df_full_joined_2
+```
+
+## Join additional species information and turn columns into right format (e.g. numeric)
+
+```{r}
+(df_full_joined_2 <- df_full_joined_2 |> 
+  group_by(date, plot, site, subplot, id, species, height, survival, seed_source, type, diversity) |> 
+  distinct() |> 
+  slice(1) |> 
+  select(
+    date, site, plot, subplot, diversity, id, species, 
+    -status, seed_source, type, growth_form, survival, height, survival,  
+    number_leaves, 
+    "number_herb_damaged" = herb_dam_14, 
+    "number_fungal_damaged" = fp_dam, 
+    "number_necrotic_damaged" = nec_dam, 
+    -prop, percent_hmin, percent_hmax, percent_fmin, percent_fmax, percent_nmin, percent_nmax, notes
+  ) |> 
+  mutate(
+    species = ifelse(is.na(species) | species == "", "unknown sp.", species),
+    genus = word(species, 1, sep = " "),
+    diversity = as.numeric(diversity),
+    height = as.numeric(height),
+    number_leaves = as.numeric(number_leaves),
+    number_herb_damaged = as.numeric(number_herb_damaged),
+    number_fungal_damaged = as.numeric(number_fungal_damaged),
+    number_necrotic_damaged = as.numeric(number_necrotic_damaged),
+    percent_hmin = as.numeric(percent_hmin),
+    percent_hmax = as.numeric(percent_hmax),
+    percent_fmin = as.numeric(percent_fmin),
+    percent_fmax = as.numeric(percent_fmax),
+    percent_nmin = as.numeric(percent_nmin),
+    percent_nmax = as.numeric(percent_nmax)
+  ) |> 
+  relocate(genus, .after = species) |> 
+  distinct() |> 
+  ungroup() |> 
+  select(-growth_form) |> 
+  full_join(genus_family_df) |> 
+  mutate(
+    family = ifelse(species == "unknown sp.", "unknown", family),
+    genus = ifelse(species == "unknown sp.", "unknown", genus), 
+	  growth_form = ifelse(species == "unknown sp.", "unknown", growth_form)
+  ) |>
+  relocate(family, .after = genus) |>
+  relocate(growth_form, .after = family) |> 
+  ungroup() |> 
+  filter(!is.na(growth_form)) |> 
+  distinct()
+  )
+```
+
+## Get a last overview about the data, identify potentially mistakes worth to repair
+
+```{r}
+df_full_joined_2 |> 
+  mutate(
+    percentage_herb_damage = number_herb_damaged / number_leaves,
+    percentage_fungal_damage = number_fungal_damaged / number_leaves,
+    percentage_necrotic_damage = number_necrotic_damaged / number_leaves
+  ) |>
+  relocate(notes, .after = last_col())
+```
+
+```{r}
+df_full_joined_2 <- df_full_joined_2 %>%
+  mutate(
+    seed_source_short = case_when(
+      str_detect(seed_source, regex("external invader", ignore_case = TRUE)) ~ "EI",
+      str_detect(seed_source, regex("planted, but not at this site|not at this site|alternate species pool", ignore_case = TRUE)) ~ "ASP",
+      str_detect(seed_source, regex("internal invader", ignore_case = TRUE)) ~ "II",
+      str_detect(seed_source, regex("regeneration", ignore_case = TRUE)) ~ "R",
+      is.na(seed_source) | str_trim(seed_source) == "" ~ NA_character_,
+      TRUE ~ seed_source
+    ),
+    notes = if_else(
+      !is.na(notes) & str_trim(notes) != "",
+      paste0(notes, "; ", seed_source),
+      seed_source
+    )
+  ) %>%
+  relocate(seed_source_short, .after = growth_form) |> 
+  select(-seed_source)
+df_full_joined_2
+```
+
+## write the final dataset into .csv for further usage
+
+```{r}
+write.csv(df_full_joined_2, file = "/Users/godbergodbersen/Desktop/phd_bef_china/phd_bef_china/datas_and_notebooks/2023/september_23/final_data_september.csv")
+```
+
+
+
